@@ -206,98 +206,151 @@ def registration_page():
 
 import streamlit as st
 import plotly.graph_objects as go
+import networkx as nx
 from streamlit_extras.stylable_container import stylable_container
 
-def dashboard_page():
-    st.title("💊 Medication Compatibility Tracker")
-    st.write(f"Welcome, {st.session_state.username}! 👋")
+def update_user_profile(username, height, weight, comorbidities, route, gender, substance_use):
+    # Placeholder function to simulate updating user profile
+    st.session_state.user_profile = {
+        "height": height,
+        "weight": weight,
+        "comorbidities": comorbidities,
+        "route": route,
+        "gender": gender,
+        "substance_use": substance_use,
+    }
 
-    # Custom CSS for a sleek UI with compact spacing and interactive elements
-    st.markdown(
-        """
+def create_interaction_graph(interactions):
+    G = nx.Graph()
+    
+    severity_colors = {
+        'high': 'red',
+        'moderate': 'orange',
+        'mild': 'yellow',
+        'none': 'green'
+    }
+    
+    for interaction in interactions:
+        drug1, drug2, details = interaction
+        severity = details.get('severity', 'none')
+        description = details.get('description', 'No details')
+        color = severity_colors.get(severity, 'gray')
+        weight = {'high': 4, 'moderate': 3, 'mild': 2, 'none': 1}.get(severity, 1)
+        G.add_edge(drug1, drug2, weight=weight, color=color, description=description)
+    
+    pos = nx.spring_layout(G)
+    edge_x, edge_y, edge_text, edge_colors, edge_widths = [], [], [], [], []
+    
+    for edge in G.edges(data=True):
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        edge_x.extend([x0, x1, None])
+        edge_y.extend([y0, y1, None])
+        edge_text.append(f"{edge[0]} - {edge[1]}: {edge[2]['description']}")
+        edge_colors.append(edge[2]['color'])
+        edge_widths.append(edge[2]['weight'])
+    
+    node_x, node_y, node_text = [], [], []
+    for node in G.nodes():
+        x, y = pos[node]
+        node_x.append(x)
+        node_y.append(y)
+        node_text.append(node)
+    
+    edge_trace = go.Scatter(
+        x=edge_x, y=edge_y,
+        line=dict(width=edge_widths, color=edge_colors),
+        hoverinfo='text',
+        text=edge_text,
+        mode='lines')
+    
+    node_trace = go.Scatter(
+        x=node_x, y=node_y,
+        mode='markers+text',
+        text=node_text,
+        hoverinfo='text',
+        marker=dict(size=10, color='blue'))
+    
+    fig = go.Figure(data=[edge_trace, node_trace],
+                    layout=go.Layout(title='Drug Interaction Network', showlegend=False))
+    return fig
+
+def dashboard_page():
+    st.set_page_config(layout="wide")
+    
+    # Custom CSS to make sidebar thinner
+    st.markdown("""
         <style>
-        .card {
-            padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-            background: linear-gradient(135deg, #eef2f3, #dfe9f3);
-            margin-bottom: 10px;
-            border: 1px solid #ccd5e0;
-            max-width: 750px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .card h3 {
-            color: #1b4f72;
-            margin-bottom: 8px;
-        }
-        .stButton button {
-            background-color: #1b4f72;
-            color: white;
-            border-radius: 6px;
-            padding: 10px 18px;
-            font-size: 14px;
-            border: none;
-            transition: background-color 0.3s;
-        }
-        .stButton button:hover {
-            background-color: #163a56;
+        [data-testid="stSidebar"] {
+            width: 200px !important;
         }
         </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # Display user profile
-    st.markdown("<div class='card'><h3>👤 Your Profile</h3></div>", unsafe_allow_html=True)
-    profile = get_user_profile(st.session_state.username)
-    if profile:
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f"**📏 Height:** {profile[0]} cm")
-            st.markdown(f"**⚖️ Weight:** {profile[1]} kg")
-            st.markdown(f"**🩺 Comorbidities:** {profile[2]}")
-        with col2:
-            st.markdown(f"**💉 Route of Administration:** {profile[3]}")
-            st.markdown(f"**⚧ Gender:** {profile[4]}")
-            st.markdown(f"**🍷 Alcohol/Substance Use:** {profile[5]}")
-
-    # Add medication
-    st.markdown("<div class='card'><h3>➕ Add Medication</h3></div>", unsafe_allow_html=True)
-    drug_name = st.text_input("💊 Medication Name")
-    dosage = st.text_input("💡 Dosage")
-    if st.button("Add Medication"):
-        if drug_name and dosage:
-            add_drugs(st.session_state.username, drug_name, dosage)
-            st.success("✅ Medication added successfully!")
-        else:
-            st.warning("⚠️ Please enter both medication and dosage.")
-
-    # Display user medications
-    st.markdown("<div class='card'><h3>📋 Your Medication</h3></div>", unsafe_allow_html=True)
-    drugs = get_user_drugs(st.session_state.username)
-    if drugs:
-        for drug in drugs:
-            st.markdown(f"- **{drug[0]}**: {drug[1]}")
-
-    # Check compatibility
-    st.markdown("<div class='card'><h3>🔍 Check Compatibility</h3></div>", unsafe_allow_html=True)
-    if st.button("Check Compatibility"):
-        if drugs:
-            drug_names = [drug[0] for drug in drugs]
-            interactions = check_drug_compatibility(drug_names)
-            if interactions:
-                st.subheader("⚠️ Medication Interactions")
-                for interaction in interactions:
-                    st.write(f"{interaction[0]} and {interaction[1]}: {interaction[2].get('description', 'No details')}")
-                st.subheader("📊 Interaction Network")
-                fig = create_interaction_graph(interactions)
-                st.plotly_chart(fig)
+        """, unsafe_allow_html=True)
+    
+    st.sidebar.title("💊 Navigation")
+    if st.sidebar.button("Dashboard", key="dashboard_btn"):
+        st.session_state.page = "Dashboard"
+    if st.sidebar.button("Add Medication", key="add_medication_btn"):
+        st.session_state.page = "Add Medication"
+    if st.sidebar.button("Check Compatibility", key="check_compatibility_btn"):
+        st.session_state.page = "Check Compatibility"
+    if st.sidebar.button("Profile", key="profile_btn"):
+        st.session_state.page = "Profile"
+    
+    if st.session_state.get("page", "Dashboard") == "Dashboard":
+        st.title("💊 Medication Compatibility Tracker")
+        st.write(f"Welcome, {st.session_state.username}! 👋")
+    
+    elif st.session_state.page == "Profile":
+        st.title("👤 Your Profile")
+        profile = get_user_profile(st.session_state.username)
+        if profile:
+            col1, col2 = st.columns(2)
+            with col1:
+                height = st.number_input("📏 Height (cm)", value=profile[0])
+                weight = st.number_input("⚖️ Weight (kg)", value=profile[1])
+                comorbidities = st.text_input("🩺 Comorbidities", value=profile[2])
+            with col2:
+                route = st.selectbox("💉 Route of Administration", ["Oral", "IV", "Topical", "Inhalation"], index=["Oral", "IV", "Topical", "Inhalation"].index(profile[3]))
+                gender = st.selectbox("⚧ Gender", ["Male", "Female", "Other"], index=["Male", "Female", "Other"].index(profile[4]))
+                substance_use = st.text_input("🍷 Alcohol/Substance Use", value=profile[5])
+            
+            if st.button("Save Changes", key="save_profile_btn"):
+                update_user_profile(st.session_state.username, height, weight, comorbidities, route, gender, substance_use)
+                st.success("Profile updated successfully!")
+                st.rerun()
+    
+    elif st.session_state.page == "Add Medication":
+        st.title("➕ Add Medication")
+        drug_name = st.text_input("💊 Medication Name")
+        dosage = st.text_input("💡 Dosage")
+        if st.button("Add Medication", key="add_med_btn"):
+            if drug_name and dosage:
+                add_drugs(st.session_state.username, drug_name, dosage)
+                st.success("✅ Medication added successfully!")
             else:
-                st.warning("✅ No interactions found.")
+                st.warning("⚠️ Please enter both medication and dosage.")
+    
+    elif st.session_state.page == "Check Compatibility":
+        st.title("🔍 Check Compatibility")
+        drugs = get_user_drugs(st.session_state.username)
+        if drugs:
+            for i, drug in enumerate(drugs):
+                st.markdown(f"- **{drug[0]}**: {drug[1]}")
+            if st.button("Check Compatibility", key="check_compatibility_action"):
+                drug_names = [drug[0] for drug in drugs]
+                interactions = check_drug_compatibility(drug_names)
+                if interactions:
+                    st.subheader("⚠️ Medication Interactions")
+                    for interaction in interactions:
+                        st.write(f"{interaction[0]} and {interaction[1]}: {interaction[2].get('description', 'No details')}")
+                    st.subheader("📊 Interaction Network")
+                    fig = create_interaction_graph(interactions)
+                    st.plotly_chart(fig)
+                else:
+                    st.warning("✅ No interactions found.")
         else:
             st.warning("⚠️ Please add medication to check compatibility.")
-
 
 # Main app logic
 def main():
