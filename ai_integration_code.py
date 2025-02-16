@@ -8,7 +8,7 @@ import requests
 import json
 import re
 
-API_URL = "https://6cf1-76-183-140-135.ngrok-free.app/generate/"  
+API_URL = "https://2fe5-76-183-140-135.ngrok-free.app/generate/"  
 
 def get_model_response(prompt, max_tokens=200, temperature=0.3):
     payload = {
@@ -17,7 +17,7 @@ def get_model_response(prompt, max_tokens=200, temperature=0.3):
         "temperature": temperature
     }
     response = requests.post(API_URL, json=payload)
-    print(response.json())
+   # print(response.json())
 
     if response.status_code == 200:
         return response.json()["response"]
@@ -104,14 +104,14 @@ def check_drug_interaction(drug1, dosage1, drug2, dosage2, patient_info):
     Please only output either "+1" if the drugs are safe together or "-1" if there is a conflict.
     Do not provide any other text.
 
-    Drug 1: {drug1}, Dosage: {dosage1}
-    Drug 2: {drug2}, Dosage: {dosage2}
+    Drug 1: {drug1}
+    Drug 2: {drug2}
 
-    MAKE SURE YOUR OUTPUT CONTAINS A "+1" if there is no conflict OR "-1" if there is a conflict.
+    MAKE SURE YOUR OUTPUT CONTAINS A "+1" if there is no conflict OR "-1" if there is a conflict or if one or two of the drugs are unsafe.
     """
 
     # Generate response from the Llama model
-    response = get_model_response(prompt, max_tokens=200, temperature=0.1)
+    response = get_model_response(prompt, max_tokens=200, temperature=0.3)
     print(response)
     
     # Access the required data
@@ -122,6 +122,22 @@ def check_drug_interaction(drug1, dosage1, drug2, dosage2, patient_info):
     # Extract and clean the response
     output_text = response
     print(output_text)
+    # count the number of +1s and -1s in the response
+    plus_ones = output_text.count("+1")
+    minus_ones = output_text.count("-1")
+
+    if "not safe" in output_text or "unsafe" in output_text:
+        return "-1"
+    
+    if "conflict" in output_text:
+        return "-1"
+
+    if(plus_ones > 0 and plus_ones > minus_ones and minus_ones > 0):
+        return "+1"
+
+    if(minus_ones > 0 and minus_ones > plus_ones and plus_ones > 0):
+        return "-1"
+    
     if "-1" in output_text:
         return "-1"
     elif re.search(r'\b1\b', output_text.replace('\n', ' ').replace(' ', '')):
@@ -140,8 +156,6 @@ def check_drug_compatibility(drugs, patient_info):
             print(result)
             if result == "-1":
                 interactions.append((drug1, drug2, {"severity": "high", "description": "Potential conflict detected"}))
-            elif result == "+1":
-                interactions.append((drug1, drug2, {"severity": "none", "description": "No conflict detected (safe)"}))
     return interactions
 
 # Function to create an interactive network graph
