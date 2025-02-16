@@ -22,5 +22,25 @@ It provides an **interactive network graph** of drug interactions and ensures sa
 
 Ensure you have **Python 3.8+** installed. Install dependencies via `pip`:
 
+### 🔹 **Run the Application**  
+uvicorn main:app --reload
+streamlit run app.py
+
+🚀 Usage
+
+1️⃣ User Registration & Login
+Users can register with their details (height, weight, comorbidities, gender, etc.)
+Login with secure bcrypt-based authentication
+2️⃣ Adding Medication
+Users can enter medication name & dosage
+Stored securely in a SQLite database
+3️⃣ Checking Drug Compatibility
+AI analyzes drug interactions
+Displays results using interactive network graphs
+
+🌐 API Endpoints
+
+
+
 # By: Shriyaa Balaji, Aritra Bhar, Srinjoy Ghose, Kevin Li, Anirudh Mazumder
 
