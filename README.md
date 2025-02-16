@@ -21,6 +21,12 @@ It provides an **interactive network graph** of drug interactions and ensures sa
 ### 🔹 **Prerequisites**  
 
 Ensure you have **Python 3.8+** installed. Install dependencies via `pip`:
+```sh
+pip install streamlit bcrypt sqlite3 requests networkx plotly fastapi llama-cpp-python
+
+### 🔹 **Run the Application**
+uvicorn main:app --reload
+streamlit run app.py
 
 # By: Shriyaa Balaji, Aritra Bhar, Srinjoy Ghose, Kevin Li, Anirudh Mazumder
 
