@@ -8,7 +8,7 @@ import requests
 import json
 import re
 
-API_URL = "https://2fe5-76-183-140-135.ngrok-free.app/generate/"  
+API_URL = "https://81d9-76-183-140-135.ngrok-free.app/generate/"  
 
 def get_model_response(prompt, max_tokens=200, temperature=0.3):
     payload = {
