@@ -143,17 +143,22 @@ def login_page():
     """
     )
     st.header("Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
 
-    if st.button("Login"):
-        if verify_user(username, password):
-            st.session_state.logged_in = True
-            st.session_state.username = username
-            st.success("Logged in successfully!")
-            st.rerun()  # Rerun the app to immediately show the dashboard
-        else:
-            st.error("Invalid username or password.")
+    # Use a form to allow login by pressing Enter
+    with st.form("login_form"):
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        submit_button = st.form_submit_button("Login")
+
+        if submit_button:
+            if verify_user(username, password):
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.success("Logged in successfully!")
+                st.rerun()  # Rerun the app to immediately show the dashboard
+            else:
+                st.error("Invalid username or password.")
+
     st.markdown("**Don't have an account?**")
     if st.button("Register here!"):
         st.session_state.page = "Register"
@@ -192,6 +197,12 @@ def registration_page():
                 st.error("Username already exists.")
         else:
             st.warning("Please enter a username and password.")
+
+    # Add a "Back to Login" button
+    st.markdown("**Already have an account?**")
+    if st.button("Back to Login"):
+        st.session_state.page = "Login"
+        st.rerun()
 
 # Dashboard page
 def dashboard_page():
