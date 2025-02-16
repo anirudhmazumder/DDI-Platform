@@ -3,47 +3,8 @@ import bcrypt
 import sqlite3
 import requests
 import networkx as nx
+import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-
-# Custom CSS for styling
-st.markdown(
-    """
-    <style>
-    .main {
-        background-color: #f9f9f9;
-        padding: 2rem;
-    }
-    .stButton button {
-        background-color: #4CAF50;
-        color: white;
-        border-radius: 5px;
-        padding: 10px 20px;
-        font-size: 16px;
-    }
-    .stButton button:hover {
-        background-color: #45a049;
-    }
-    .stTextInput input {
-        border-radius: 5px;
-        padding: 10px;
-    }
-    .stTitle {
-        color: #4CAF50;
-    }
-    .stHeader {
-        color: #333;
-    }
-    .card {
-        background-color: white;
-        border-radius: 10px;
-        padding: 20px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
 
 # Database setup
 def init_db():
@@ -173,7 +134,15 @@ def create_interaction_graph(interactions):
 
 # Login page
 def login_page():
-    st.title("Welcome to the Drug Interaction Checker 🩺")
+    st.title("Your AI-Powered Medication Safety Guide 🏥")
+    st.markdown(
+    """
+    ## Wondering if your medications are safe to take together? 💊
+    Before you mix prescriptions, over-the-counter drugs, or supplements, check for potential interactions with our AI-powered Drug Interaction Checker.
+    Ensure your safety with just a few clicks!
+    """
+    )
+    st.header("Login")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
@@ -182,15 +151,27 @@ def login_page():
             st.session_state.logged_in = True
             st.session_state.username = username
             st.success("Logged in successfully!")
-            st.rerun()
         else:
             st.error("Invalid username or password.")
-
-    st.markdown("Don't have an account? **Register here.**")
+    st.markdown("**Don't have an account?**")
+    if st.button("Register here!"):
+        st.session_state.page = "Register"
+        st.rerun()
+    
 
 # Registration page
 def registration_page():
-    st.title("Create Your Account 🆕")
+    st.title("Your AI-Powered Medication Safety Guide 🏥")
+    st.markdown(
+    """
+    ## Wondering if your medications are safe to take together? 💊
+    Before you mix prescriptions, over-the-counter drugs, or supplements, check for potential interactions with our AI-powered Drug Interaction Checker.
+    Ensure your safety with just a few clicks!
+    """
+    )
+    st.header("Register")
+
+    st.write("Enter drug names below to check potential interactions.")
     username = st.text_input("Choose a username")
     password = st.text_input("Choose a password", type="password")
     height = st.number_input("Height (cm)", min_value=0.0)
@@ -210,70 +191,59 @@ def registration_page():
         else:
             st.warning("Please enter a username and password.")
 
-    st.markdown("Already have an account? **Login here.**")
-
 # Dashboard page
 def dashboard_page():
-    st.title(f"Welcome, {st.session_state.username}! 👋")
+    st.title("Drug Compatibility Checker")
+    st.write(f"Welcome, {st.session_state.username}!")
 
-    # Profile Card
-    with st.container():
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.subheader("👤 Your Profile")
-        profile = get_user_profile(st.session_state.username)
-        if profile:
-            st.write(f"**Height:** {profile[0]} cm")
-            st.write(f"**Weight:** {profile[1]} kg")
-            st.write(f"**Comorbidities:** {profile[2]}")
-            st.write(f"**Route of Administration:** {profile[3]}")
-            st.write(f"**Gender:** {profile[4]}")
-            st.write(f"**Alcohol/Substance Use:** {profile[5]}")
-        st.markdown("</div>", unsafe_allow_html=True)
 
-    # Drug Input Card
-    with st.container():
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.subheader("💊 Add Drugs")
-        drug_name = st.text_input("Drug Name")
-        dosage = st.text_input("Dosage")
-        if st.button("Add Drug"):
-            if drug_name and dosage:
-                add_drugs(st.session_state.username, drug_name, dosage)
-                st.success("Drug added successfully!")
-            else:
-                st.warning("Please enter both drug name and dosage.")
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.write("Enter drug names below to check potential interactions.")
 
-    # Drug List Card
-    with st.container():
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.subheader("📋 Your Drugs")
-        drugs = get_user_drugs(st.session_state.username)
+    # Display user profile
+    st.subheader("Your Profile")
+    profile = get_user_profile(st.session_state.username)
+    if profile:
+        st.write(f"Height: {profile[0]} cm")
+        st.write(f"Weight: {profile[1]} kg")
+        st.write(f"Comorbidities: {profile[2]}")
+        st.write(f"Route of Administration: {profile[3]}")
+        st.write(f"Gender: {profile[4]}")
+        st.write(f"Alcohol/Substance Use: {profile[5]}")
+
+    # Add drugs
+    st.subheader("Add Drugs")
+    drug_name = st.text_input("Drug Name")
+    dosage = st.text_input("Dosage")
+    if st.button("Add Drug"):
+        if drug_name and dosage:
+            add_drugs(st.session_state.username, drug_name, dosage)
+            st.success("Drug added successfully!")
+        else:
+            st.warning("Please enter both drug name and dosage.")
+
+    # Display user drugs
+    st.subheader("Your Drugs")
+    drugs = get_user_drugs(st.session_state.username)
+    if drugs:
+        for drug in drugs:
+            st.write(f"{drug[0]} - {drug[1]}")
+
+    # Check drug compatibility
+    if st.button("Check Compatibility"):
         if drugs:
-            for drug in drugs:
-                st.write(f"**{drug[0]}** - {drug[1]}")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # Interaction Check Card
-    with st.container():
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.subheader("⚠️ Check Compatibility")
-        if st.button("Check Compatibility"):
-            if drugs:
-                drug_names = [drug[0] for drug in drugs]
-                interactions = check_drug_compatibility(drug_names)
-                if interactions:
-                    st.subheader("Interaction Results")
-                    for interaction in interactions:
-                        st.write(f"**{interaction[0]}** and **{interaction[1]}**: {interaction[2].get('description', 'No details')}")
-                    st.subheader("Interaction Network")
-                    fig = create_interaction_graph(interactions)
-                    st.plotly_chart(fig)
-                else:
-                    st.warning("No interactions found.")
+            drug_names = [drug[0] for drug in drugs]
+            interactions = check_drug_compatibility(drug_names)
+            if interactions:
+                st.subheader("Drug Interactions")
+                for interaction in interactions:
+                    st.write(f"{interaction[0]} and {interaction[1]}: {interaction[2].get('description', 'No details')}")
+                st.subheader("Interaction Network")
+                fig = create_interaction_graph(interactions)
+                st.plotly_chart(fig)
             else:
-                st.warning("Please add drugs to check compatibility.")
-        st.markdown("</div>", unsafe_allow_html=True)
+                st.warning("No interactions found.")
+        else:
+            st.warning("Please add drugs to check compatibility.")
 
 # Main app logic
 def main():
@@ -294,7 +264,6 @@ def main():
             st.session_state.logged_in = False
             st.session_state.username = None
             st.success("Logged out successfully!")
-            st.rerun()
 
 if __name__ == "__main__":
     main()
