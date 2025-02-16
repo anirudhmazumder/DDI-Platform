@@ -138,7 +138,7 @@ def login_page():
     st.markdown(
     """
     ## Wondering if your medications are safe to take together? 💊
-    Before you mix prescriptions, over-the-counter drugs, or supplements, check for potential interactions with our AI-powered Drug Interaction Checker.
+    Before you mix prescriptions, over-the-counter medication, or supplements, check for potential interactions with our AI-powered Medication Interaction Checker.
     Ensure your safety with just a few clicks!
     """
     )
@@ -151,13 +151,13 @@ def login_page():
             st.session_state.logged_in = True
             st.session_state.username = username
             st.success("Logged in successfully!")
+            st.rerun()  # Rerun the app to immediately show the dashboard
         else:
             st.error("Invalid username or password.")
     st.markdown("**Don't have an account?**")
     if st.button("Register here!"):
         st.session_state.page = "Register"
         st.rerun()
-    
 
 # Registration page
 def registration_page():
@@ -165,19 +165,19 @@ def registration_page():
     st.markdown(
     """
     ## Wondering if your medications are safe to take together? 💊
-    Before you mix prescriptions, over-the-counter drugs, or supplements, check for potential interactions with our AI-powered Drug Interaction Checker.
+    Before you mix prescriptions, over-the-counter medication, or supplements, check for potential interactions with our AI-powered Medication Interaction Checker.
     Ensure your safety with just a few clicks!
     """
     )
     st.header("Register")
 
-    st.write("Enter drug names below to check potential interactions.")
+    st.write("Enter medication names below to check potential interactions.")
     username = st.text_input("Choose a username")
     password = st.text_input("Choose a password", type="password")
     height = st.number_input("Height (cm)", min_value=0.0)
     weight = st.number_input("Weight (kg)", min_value=0.0)
     comorbidities = st.text_input("Comorbidities (comma-separated)")
-    route = st.selectbox("Route of Drug Administration", ["Oral", "IV", "Topical", "Inhalation"])
+    route = st.selectbox("Route of Medication Administration", ["Oral", "IV", "Topical", "Inhalation"])
     gender = st.selectbox("Gender", ["Male", "Female", "Other"])
     substance_use = st.text_input("Alcohol/Substance Use")
 
@@ -186,6 +186,8 @@ def registration_page():
             try:
                 add_user(username, password, height, weight, comorbidities, route, gender, substance_use)
                 st.success("Registration successful! Please log in.")
+                st.session_state.page = "Login"  # Redirect to login page
+                st.rerun()  # Rerun the app to show the login page
             except sqlite3.IntegrityError:
                 st.error("Username already exists.")
         else:
@@ -193,48 +195,82 @@ def registration_page():
 
 # Dashboard page
 def dashboard_page():
-    st.title("Drug Compatibility Checker")
-    st.write(f"Welcome, {st.session_state.username}!")
+    st.title("Medication Compatibility Checker")
+    st.write(f"Welcome, {st.session_state.username}! 👋")
 
+    # Custom CSS for modern aesthetics
+    st.markdown(
+        """
+        <style>
+        .card {
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(145deg, #ffffff, #f1f1f1);
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        .card h3 {
+            color: #2e86de;
+            margin-bottom: 15px;
+        }
+        .stButton button {
+            background-color: #2e86de;
+            color: white;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            transition: background-color 0.3s;
+        }
+        .stButton button:hover {
+            background-color: #1c6bb8;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    st.write("Enter drug names below to check potential interactions.")
-
-    # Display user profile
-    st.subheader("Your Profile")
+    # Display user profile in a card
+    st.markdown("<div class='card'><h3>Your Profile</h3></div>", unsafe_allow_html=True)
     profile = get_user_profile(st.session_state.username)
     if profile:
-        st.write(f"Height: {profile[0]} cm")
-        st.write(f"Weight: {profile[1]} kg")
-        st.write(f"Comorbidities: {profile[2]}")
-        st.write(f"Route of Administration: {profile[3]}")
-        st.write(f"Gender: {profile[4]}")
-        st.write(f"Alcohol/Substance Use: {profile[5]}")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"**Height:** {profile[0]} cm")
+            st.markdown(f"**Weight:** {profile[1]} kg")
+            st.markdown(f"**Comorbidities:** {profile[2]}")
+        with col2:
+            st.markdown(f"**Route of Administration:** {profile[3]}")
+            st.markdown(f"**Gender:** {profile[4]}")
+            st.markdown(f"**Alcohol/Substance Use:** {profile[5]}")
 
-    # Add drugs
-    st.subheader("Add Drugs")
-    drug_name = st.text_input("Drug Name")
+    # Add drugs in a card
+    st.markdown("<div class='card'><h3>Add Medication</h3></div>", unsafe_allow_html=True)
+    drug_name = st.text_input("Medication Name")
     dosage = st.text_input("Dosage")
-    if st.button("Add Drug"):
+    if st.button("Add Medication"):
         if drug_name and dosage:
             add_drugs(st.session_state.username, drug_name, dosage)
-            st.success("Drug added successfully!")
+            st.success("Medication added successfully!")
         else:
-            st.warning("Please enter both drug name and dosage.")
+            st.warning("Please enter both medication and dosage.")
 
-    # Display user drugs
-    st.subheader("Your Drugs")
+    # Display user drugs in a card
+    st.markdown("<div class='card'><h3>Your Medication</h3></div>", unsafe_allow_html=True)
     drugs = get_user_drugs(st.session_state.username)
     if drugs:
         for drug in drugs:
-            st.write(f"{drug[0]} - {drug[1]}")
+            st.markdown(f"- **{drug[0]}**: {drug[1]}")
 
     # Check drug compatibility
+    st.markdown("<div class='card'><h3>Check Compatibility</h3></div>", unsafe_allow_html=True)
     if st.button("Check Compatibility"):
         if drugs:
             drug_names = [drug[0] for drug in drugs]
             interactions = check_drug_compatibility(drug_names)
             if interactions:
-                st.subheader("Drug Interactions")
+                st.subheader("Medication Interactions")
                 for interaction in interactions:
                     st.write(f"{interaction[0]} and {interaction[1]}: {interaction[2].get('description', 'No details')}")
                 st.subheader("Interaction Network")
@@ -243,7 +279,7 @@ def dashboard_page():
             else:
                 st.warning("No interactions found.")
         else:
-            st.warning("Please add drugs to check compatibility.")
+            st.warning("Please add medication to check compatibility.")
 
 # Main app logic
 def main():
@@ -251,19 +287,22 @@ def main():
 
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
+    if "page" not in st.session_state:
+        st.session_state.page = "Login"  # Default to Login page
 
     if not st.session_state.logged_in:
-        page = st.sidebar.radio("Navigation", ["Login", "Register"])
-        if page == "Login":
+        if st.session_state.page == "Login":
             login_page()
-        elif page == "Register":
+        elif st.session_state.page == "Register":
             registration_page()
     else:
         dashboard_page()
         if st.sidebar.button("Logout"):
             st.session_state.logged_in = False
             st.session_state.username = None
+            st.session_state.page = "Login"  # Reset to login after logout
             st.success("Logged out successfully!")
+            st.rerun()
 
 if __name__ == "__main__":
     main()
