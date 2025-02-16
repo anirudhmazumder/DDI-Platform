@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from llama_cpp import Llama
 import requests
 import json
+import re
 
 API_URL = "https://6cf1-76-183-140-135.ngrok-free.app/generate/"  
 
@@ -17,8 +18,6 @@ def get_model_response(prompt, max_tokens=200, temperature=0.3):
     }
     response = requests.post(API_URL, json=payload)
     print(response.json())
-    print("Raw API Response:", response.text)
-
 
     if response.status_code == 200:
         return response.json()["response"]
@@ -125,10 +124,10 @@ def check_drug_interaction(drug1, dosage1, drug2, dosage2, patient_info):
     print(output_text)
     if "-1" in output_text:
         return "-1"
-    elif "+1" in output_text:
+    elif re.search(r'\b1\b', output_text.replace('\n', ' ').replace(' ', '')):
         return "+1"
     else:
-        return check_drug_interaction(drug1, dosage1, drug2, dosage2, patient_info)
+        return "0"
 
 # Function to check drug compatibility
 def check_drug_compatibility(drugs, patient_info):
@@ -141,6 +140,8 @@ def check_drug_compatibility(drugs, patient_info):
             print(result)
             if result == "-1":
                 interactions.append((drug1, drug2, {"severity": "high", "description": "Potential conflict detected"}))
+            elif result == "+1":
+                interactions.append((drug1, drug2, {"severity": "none", "description": "No conflict detected (safe)"}))
     return interactions
 
 # Function to create an interactive network graph
