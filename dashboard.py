@@ -204,93 +204,100 @@ def registration_page():
         st.session_state.page = "Login"
         st.rerun()
 
-# Dashboard page
+import streamlit as st
+import plotly.graph_objects as go
+from streamlit_extras.stylable_container import stylable_container
+
 def dashboard_page():
-    st.title("Medication Compatibility Checker")
+    st.title("💊 Medication Compatibility Tracker")
     st.write(f"Welcome, {st.session_state.username}! 👋")
 
-    # Custom CSS for modern aesthetics
+    # Custom CSS for a sleek UI with compact spacing and interactive elements
     st.markdown(
         """
         <style>
         .card {
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            background: linear-gradient(145deg, #ffffff, #f1f1f1);
-            margin-bottom: 20px;
-            border: 1px solid #e0e0e0;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(135deg, #eef2f3, #dfe9f3);
+            margin-bottom: 10px;
+            border: 1px solid #ccd5e0;
+            max-width: 750px;
+            margin-left: auto;
+            margin-right: auto;
         }
         .card h3 {
-            color: #2e86de;
-            margin-bottom: 15px;
+            color: #1b4f72;
+            margin-bottom: 8px;
         }
         .stButton button {
-            background-color: #2e86de;
+            background-color: #1b4f72;
             color: white;
-            border-radius: 5px;
-            padding: 10px 20px;
-            font-size: 16px;
+            border-radius: 6px;
+            padding: 10px 18px;
+            font-size: 14px;
             border: none;
             transition: background-color 0.3s;
         }
         .stButton button:hover {
-            background-color: #1c6bb8;
+            background-color: #163a56;
         }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-    # Display user profile in a card
-    st.markdown("<div class='card'><h3>Your Profile</h3></div>", unsafe_allow_html=True)
+    # Display user profile
+    st.markdown("<div class='card'><h3>👤 Your Profile</h3></div>", unsafe_allow_html=True)
     profile = get_user_profile(st.session_state.username)
     if profile:
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown(f"**Height:** {profile[0]} cm")
-            st.markdown(f"**Weight:** {profile[1]} kg")
-            st.markdown(f"**Comorbidities:** {profile[2]}")
+            st.markdown(f"**📏 Height:** {profile[0]} cm")
+            st.markdown(f"**⚖️ Weight:** {profile[1]} kg")
+            st.markdown(f"**🩺 Comorbidities:** {profile[2]}")
         with col2:
-            st.markdown(f"**Route of Administration:** {profile[3]}")
-            st.markdown(f"**Gender:** {profile[4]}")
-            st.markdown(f"**Alcohol/Substance Use:** {profile[5]}")
+            st.markdown(f"**💉 Route of Administration:** {profile[3]}")
+            st.markdown(f"**⚧ Gender:** {profile[4]}")
+            st.markdown(f"**🍷 Alcohol/Substance Use:** {profile[5]}")
 
-    # Add drugs in a card
-    st.markdown("<div class='card'><h3>Add Medication</h3></div>", unsafe_allow_html=True)
-    drug_name = st.text_input("Medication Name")
-    dosage = st.text_input("Dosage")
+    # Add medication
+    st.markdown("<div class='card'><h3>➕ Add Medication</h3></div>", unsafe_allow_html=True)
+    drug_name = st.text_input("💊 Medication Name")
+    dosage = st.text_input("💡 Dosage")
     if st.button("Add Medication"):
         if drug_name and dosage:
             add_drugs(st.session_state.username, drug_name, dosage)
-            st.success("Medication added successfully!")
+            st.success("✅ Medication added successfully!")
         else:
-            st.warning("Please enter both medication and dosage.")
+            st.warning("⚠️ Please enter both medication and dosage.")
 
-    # Display user drugs in a card
-    st.markdown("<div class='card'><h3>Your Medication</h3></div>", unsafe_allow_html=True)
+    # Display user medications
+    st.markdown("<div class='card'><h3>📋 Your Medication</h3></div>", unsafe_allow_html=True)
     drugs = get_user_drugs(st.session_state.username)
     if drugs:
         for drug in drugs:
             st.markdown(f"- **{drug[0]}**: {drug[1]}")
 
-    # Check drug compatibility
-    st.markdown("<div class='card'><h3>Check Compatibility</h3></div>", unsafe_allow_html=True)
+    # Check compatibility
+    st.markdown("<div class='card'><h3>🔍 Check Compatibility</h3></div>", unsafe_allow_html=True)
     if st.button("Check Compatibility"):
         if drugs:
             drug_names = [drug[0] for drug in drugs]
             interactions = check_drug_compatibility(drug_names)
             if interactions:
-                st.subheader("Medication Interactions")
+                st.subheader("⚠️ Medication Interactions")
                 for interaction in interactions:
                     st.write(f"{interaction[0]} and {interaction[1]}: {interaction[2].get('description', 'No details')}")
-                st.subheader("Interaction Network")
+                st.subheader("📊 Interaction Network")
                 fig = create_interaction_graph(interactions)
                 st.plotly_chart(fig)
             else:
-                st.warning("No interactions found.")
+                st.warning("✅ No interactions found.")
         else:
-            st.warning("Please add medication to check compatibility.")
+            st.warning("⚠️ Please add medication to check compatibility.")
+
 
 # Main app logic
 def main():
